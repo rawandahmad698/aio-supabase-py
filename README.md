@@ -58,11 +58,11 @@ We can then read the keys in the python source code.
 
 ```python
 import os
-from supabase import create_client, Client
+from supabase import create, SupabaseClient
 
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client(url, key)
+supabase: SupabaseClient = create(url, key)
 ```
 
 Use the supabase client to interface with your database.
@@ -89,18 +89,18 @@ Rough roadmap:
 - [ ] Wrap [Realtime-py](https://github.com/supabase/realtime-py)
 - [x] Wrap [Gotrue-py](https://github.com/J0/gotrue-py)
 
-### Client Library
+### SupabaseClient Library
 
 This is a sample of how you'd use supabase-py. Functions and tests are WIP
 
 ## Authenticate
 
 ```python
-from supabase import create_client, Client
+from supabase import create, SupabaseClient
 
 url: str = os.environ.get("SUPABASE_TEST_URL")
 key: str = os.environ.get("SUPABASE_TEST_KEY")
-supabase: Client = create_client(url, key)
+supabase: SupabaseClient = create(url, key)
 # Create a random user login email and password.
 random_email: str = "3hf82fijf92@supamail.com"
 random_password: str = "fqj13bnf2hiu23h"
@@ -110,11 +110,11 @@ user = supabase.auth.sign_up(email=random_email, password=random_password)
 ## Sign-in
 
 ```python
-from supabase import create_client, Client
+from supabase import create, SupabaseClient
 
 url: str = os.environ.get("SUPABASE_TEST_URL")
 key: str = os.environ.get("SUPABASE_TEST_KEY")
-supabase: Client = create_client(url, key)
+supabase: SupabaseClient = create(url, key)
 # Sign in using the user email and password.
 random_email: str = "3hf82fijf92@supamail.com"
 random_password: str = "fqj13bnf2hiu23h"
@@ -126,23 +126,23 @@ user = supabase.auth.sign_in(email=random_email, password=random_password)
 ### Insertion of Data
 
 ```python
-from supabase import create_client, Client
+from supabase import create, SupabaseClient
 
 url: str = os.environ.get("SUPABASE_TEST_URL")
 key: str = os.environ.get("SUPABASE_TEST_KEY")
-supabase: Client = create_client(url, key)
-data = supabase.table("countries").insert({"name":"Germany"}).execute()
+supabase: SupabaseClient = create(url, key)
+data = supabase.table("countries").insert({"name": "Germany"}).execute()
 assert len(data.data) > 0
 ```
 
 ### Selection of Data
 
 ```python
-from supabase import create_client, Client
+from supabase import create, SupabaseClient
 
 url: str = os.environ.get("SUPABASE_TEST_URL")
 key: str = os.environ.get("SUPABASE_TEST_KEY")
-supabase: Client = create_client(url, key)
+supabase: SupabaseClient = create(url, key)
 data = supabase.table("countries").select("*").execute()
 # Assert we pulled real data.
 assert len(data.data) > 0
@@ -151,22 +151,22 @@ assert len(data.data) > 0
 ### Update of Data
 
 ```python
-from supabase import create_client, Client
+from supabase import create, SupabaseClient
 
 url: str = os.environ.get("SUPABASE_TEST_URL")
 key: str = os.environ.get("SUPABASE_TEST_KEY")
-supabase: Client = create_client(url, key)
+supabase: SupabaseClient = create(url, key)
 data = supabase.table("countries").update({"country": "Indonesia", "capital_city": "Jakarta"}).eq("id", 1).execute()
 ```
 
 ### Deletion of Data
 
 ```python
-from supabase import create_client, Client
+from supabase import create, SupabaseClient
 
 url: str = os.environ.get("SUPABASE_TEST_URL")
 key: str = os.environ.get("SUPABASE_TEST_KEY")
-supabase: Client = create_client(url, key)
+supabase: SupabaseClient = create(url, key)
 data = supabase.table("countries").delete().eq("id", 1).execute()
 ```
 

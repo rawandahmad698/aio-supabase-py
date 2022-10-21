@@ -1,7 +1,7 @@
 # variables for database and url configuration
 from config import Config
 
-from supabase import Client, create_client
+from supabase import SupabaseClient, create
 
 
 class SupabaseDB:
@@ -15,4 +15,4 @@ class SupabaseDB:
 
     url: str = Config.URL
     key: str = Config.KEY
-    supabase: Client = create_client(url, key)
+    supabase: SupabaseClient = create(url, key)

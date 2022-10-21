@@ -1,11 +1,11 @@
 import re
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, Coroutine
 
 from httpx import Timeout
-from postgrest import SyncFilterRequestBuilder, SyncPostgrestClient, SyncRequestBuilder
-from postgrest.constants import DEFAULT_POSTGREST_CLIENT_TIMEOUT
-from supafunc import FunctionsClient
+from .postgrest import AsyncFilterRequestBuilder, AsyncPostgrestClient, AsyncRequestBuilder
+from .postgrest.constants import DEFAULT_POSTGREST_CLIENT_TIMEOUT
 
+from supafunc import FunctionsClient
 from .lib.auth_client import SupabaseAuthClient
 from .lib.client_options import ClientOptions
 from .lib.storage_client import SupabaseStorageClient
@@ -18,7 +18,7 @@ class SupabaseException(Exception):
         super().__init__(self.message)
 
 
-class Client:
+class SupabaseClient:
     """Supabase client class."""
 
     def __init__(
@@ -55,20 +55,23 @@ class Client:
 
         self.supabase_url = supabase_url
         self.supabase_key = supabase_key
+
         options.headers.update(self._get_auth_headers())
+
         self.rest_url: str = f"{supabase_url}/rest/v1"
         self.realtime_url: str = f"{supabase_url}/realtime/v1".replace("http", "ws")
         self.auth_url: str = f"{supabase_url}/auth/v1"
         self.storage_url = f"{supabase_url}/storage/v1"
+
         is_platform = re.search(r"(supabase\.co)|(supabase\.in)", supabase_url)
         if is_platform:
             url_parts = supabase_url.split(".")
             self.functions_url = (
                 f"{url_parts[0]}.functions.{url_parts[1]}.{url_parts[2]}"
             )
-
         else:
             self.functions_url = f"{supabase_url}/functions/v1"
+
         self.schema: str = options.schema
 
         # Instantiate clients.
@@ -89,6 +92,14 @@ class Client:
             schema=options.schema,
         )
 
+    # Add async capabilities
+    async def __aenter__(self):
+        print("Opening SupabaseClient")
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        print("Closing SupabaseClient")
+
     def functions(self) -> FunctionsClient:
         return FunctionsClient(self.functions_url, self._get_auth_headers())
 
@@ -96,23 +107,23 @@ class Client:
         """Create instance of the storage client"""
         return SupabaseStorageClient(self.storage_url, self._get_auth_headers())
 
-    def table(self, table_name: str) -> SyncRequestBuilder:
+    async def table(self, table_name: str) -> AsyncRequestBuilder:
         """Perform a table operation.
 
         Note that the supabase client uses the `from` method, but in Python,
         this is a reserved keyword, so we have elected to use the name `table`.
-        Alternatively you can use the `.from_()` method.
+        Alternatively you can use the `.on()` method.
         """
-        return self.from_(table_name)
+        return self.on(table_name)
 
-    def from_(self, table_name: str) -> SyncRequestBuilder:
+    def on(self, table_name: str) -> AsyncRequestBuilder:
         """Perform a table operation.
 
         See the `table` method.
         """
-        return self.postgrest.from_(table_name)
+        return self.postgrest.on(table_name)
 
-    def rpc(self, fn: str, params: Dict[Any, Any]) -> SyncFilterRequestBuilder:
+    def rpc(self, fn: str, params: Dict[Any, Any]) -> Coroutine[Any, Any, AsyncFilterRequestBuilder]:
         """Performs a stored procedure call.
 
         Parameters
@@ -130,48 +141,12 @@ class Client:
         """
         return self.postgrest.rpc(fn, params)
 
-    #     async def remove_subscription_helper(resolve):
-    #         try:
-    #             await self._close_subscription(subscription)
-    #             open_subscriptions = len(self.get_subscriptions())
-    #             if not open_subscriptions:
-    #                 error = await self.realtime.disconnect()
-    #                 if error:
-    #                     return {"error": None, "data": { open_subscriptions}}
-    #         except Exception as e:
-    #             raise e
-    #     return remove_subscription_helper(subscription)
-
-    # async def _close_subscription(self, subscription):
-    #    """Close a given subscription
-
-    #    Parameters
-    #    ----------
-    #    subscription
-    #        The name of the channel
-    #    """
-    #    if not subscription.closed:
-    #        await self._closeChannel(subscription)
-
-    # def get_subscriptions(self):
-    #     """Return all channels the client is subscribed to."""
-    #     return self.realtime.channels
-
-    # @staticmethod
-    # def _init_realtime_client(
-    #     realtime_url: str, supabase_key: str
-    # ) -> SupabaseRealtimeClient:
-    #     """Private method for creating an instance of the realtime-py client."""
-    #     return SupabaseRealtimeClient(
-    #         realtime_url, {"params": {"apikey": supabase_key}}
-    #     )
-
     @staticmethod
     def _init_supabase_auth_client(
             auth_url: str,
             client_options: ClientOptions,
     ) -> SupabaseAuthClient:
-        """Creates a wrapped instance of the GoTrue Client."""
+        """Creates a wrapped instance of the GoTrue SupabaseClient."""
         return SupabaseAuthClient(
             url=auth_url,
             auto_refresh_token=client_options.auto_refresh_token,
@@ -187,9 +162,9 @@ class Client:
             headers: Dict[str, str],
             schema: str,
             timeout: Union[int, float, Timeout] = DEFAULT_POSTGREST_CLIENT_TIMEOUT,
-    ) -> SyncPostgrestClient:
+    ) -> AsyncPostgrestClient:
         """Private helper for creating an instance of the Postgrest client."""
-        client = SyncPostgrestClient(
+        client = AsyncPostgrestClient(
             rest_url, headers=headers, schema=schema, timeout=timeout
         )
         client.auth(token=supabase_key)
@@ -204,11 +179,11 @@ class Client:
         }
 
 
-def create_client(
+def create(
         supabase_url: str,
         supabase_key: str,
         options: ClientOptions = ClientOptions(),
-) -> Client:
+) -> SupabaseClient:
     """Create client function to instantiate supabase client like JS runtime.
 
     Parameters
@@ -225,14 +200,14 @@ def create_client(
     --------
     Instantiating the client.
     >>> import os
-    >>> from supabase import create_client, Client
+    >>> from supabase import create, SupabaseClient
     >>>
     >>> url: str = os.environ.get("SUPABASE_TEST_URL")
     >>> key: str = os.environ.get("SUPABASE_TEST_KEY")
-    >>> supabase: Client = create_client(url, key)
+    >>> supabase: SupabaseClient = create(url, key)
 
     Returns
     -------
-    Client
+    SupabaseClient
     """
-    return Client(supabase_url=supabase_url, supabase_key=supabase_key, options=options)
+    return SupabaseClient(supabase_url=supabase_url, supabase_key=supabase_key, options=options)

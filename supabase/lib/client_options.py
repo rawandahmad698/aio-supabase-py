@@ -7,7 +7,7 @@ from postgrest.constants import DEFAULT_POSTGREST_CLIENT_TIMEOUT
 
 from supabase import __version__
 
-DEFAULT_HEADERS = {"X-Client-Info": f"supabase-py/{__version__}"}
+DEFAULT_HEADERS = {"X-SupabaseClient-Info": f"aio-supabase/{__version__}"}
 
 
 @dataclass

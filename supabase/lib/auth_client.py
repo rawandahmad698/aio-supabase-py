@@ -25,7 +25,8 @@ class SupabaseAuthClient(SyncGoTrueClient):
         api: Optional[SyncGoTrueAPI] = None,
         replace_default_headers: bool = False,
     ):
-        """Instantiate SupabaseAuthClient instance."""
+        """Instantiate SupabaseAuthClient instance.
+        """
         SyncGoTrueClient.__init__(
             self,
             url=url,

@@ -309,7 +309,7 @@ typing-extensions = {version = ">=3.7.4.3", markers = "python_version < \"3.8\""
 [[package]]
 name = "gotrue"
 version = "0.5.4"
-description = "Python Client Library for GoTrue"
+description = "Python SupabaseClient Library for GoTrue"
 category = "main"
 optional = false
 python-versions = ">=3.7,<4.0"
